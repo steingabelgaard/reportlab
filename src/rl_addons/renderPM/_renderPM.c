@@ -14,7 +14,7 @@
 #endif
 
 
-#define VERSION "1.09"
+#define VERSION "1.10"
 #define MODULE "_renderPM"
 static PyObject *moduleError;
 static PyObject *_version;
