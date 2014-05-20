@@ -16,13 +16,13 @@ from reportlab.lib.utils import fp_str
 from reportlab.pdfbase import pdfmetrics
 
 # try to import pyfribidi
+log2vis = None
 try:
     from pyfribidi2 import log2vis, ON as DIR_ON, LTR as DIR_LTR, RTL as DIR_RTL
+    directionsMap = dict(LTR=DIR_LTR,RTL=DIR_RTL)
 except:
     import warnings
     warnings.warn('pyfribidi is not installed - RTL not supported')
-    log2vis = lambda text, direction: text
-    DIR_ON = DIR_LTR = DIR_RTL = None
 
 class _PDFColorSetter:
     '''Abstracts the color setting operations; used in Canvas and Textobject
@@ -360,9 +360,9 @@ class PDFTextObject(_PDFColorSetter):
 
     def _formatText(self, text):
         "Generates PDF text output operator(s)"
-        # Use pyfribidi to write the text in the correct visual order.
-        directions = { 'LTR': DIR_LTR, 'RTL': DIR_RTL }
-        text = log2vis(text, directions.get(self.direction, DIR_ON))
+        if log2vis and self.direction!='LTR':
+            # Use pyfribidi to write the text in the correct visual order.
+            text = log2vis(text, directionsMap.get(self.direction.upper(),DIR_ON))
 
         canv = self._canvas
         font = pdfmetrics.getFont(self._fontname)

@@ -11,6 +11,9 @@ from reportlab.lib.units import inch
 from reportlab.lib.colors import red, black, navy, white, green
 from reportlab.lib.randomtext import randomText
 from reportlab.rl_config import defaultPageSize
+from reportlab.pdfbase import ttfonts
+from reportlab.pdfbase import pdfmetrics
+from reportlab.lib.fonts import addMapping
 
 (PAGE_WIDTH, PAGE_HEIGHT) = defaultPageSize
 
@@ -35,6 +38,34 @@ def myLaterPages(canvas, doc):
     canvas.drawString(4 * inch, 0.75 * inch, "Page %d" % doc.page)
     canvas.restoreState()
 
+def getAFont():
+    '''register a font that supports most Unicode characters'''
+    I = []
+    font_name = 'DejaVuSans'
+    I.append([(font_name, 0, 0, font_name),
+                 (font_name, 1, 0, font_name + '-Bold'),
+                 (font_name, 0, 1, font_name + '-Oblique'),
+                 (font_name, 1, 1, font_name + '-BoldOblique'),
+                 ])
+    font_name = 'FreeSerif'
+    I.append([(font_name, 0, 0, font_name),
+                 (font_name, 1, 0, font_name + 'Bold'),
+                 (font_name, 0, 1, font_name + 'Italic'),
+                 (font_name, 1, 1, font_name + 'BoldItalic'),
+                 ])
+    I.reverse()
+    for info in I:
+        n = 0
+        for font in info:
+            fontName = font[3]
+            try:
+                pdfmetrics.registerFont(ttfonts.TTFont(fontName,fontName + '.ttf'))
+                addMapping(*font)
+                n += 1
+            except:
+                pass
+        if n==4: return fontName
+    raise ValueError('could not find suitable font')
 
 class ParagraphTestCase(unittest.TestCase):
     "Test Paragraph class (eyeball-test)."
@@ -165,23 +196,9 @@ class ParagraphTestCase(unittest.TestCase):
             onFirstPage=myFirstPage, onLaterPages=myLaterPages)
     
     def testBidi(self):
-        from reportlab.pdfbase import ttfonts
-        def registerFont(filename):
-            from reportlab.pdfbase import pdfmetrics
-            from reportlab.lib.fonts import addMapping
-        
-            face = ttfonts.TTFontFace(filename)
-            pdfmetrics.registerFont(ttfonts.TTFont(face.name, filename, asciiReadable=0))
-            addMapping(face.familyName, face.bold, face.italic, face.name)
 
         # register a font that supports most Unicode characters
-        import os
-        fontDir = 'ttf-dejavu'
-        fontName = 'DejaVuSans'
-        try:
-            registerFont(os.path.join('/usr/share/fonts/truetype/', fontDir, fontName + '.ttf'))
-        except ttfonts.TTFError:
-            registerFont(os.path.join(fontDir, fontName + '.ttf'))
+        fontName = getAFont()
 
         # create styles based on the registered font
         from reportlab.lib.enums import TA_LEFT, TA_RIGHT
@@ -290,40 +307,9 @@ class ParagraphTestCase(unittest.TestCase):
         from reportlab.platypus.paragraph import Paragraph
         from reportlab.platypus.flowables import Spacer
         from reportlab.lib.styles import ParagraphStyle
-        from reportlab.pdfbase import pdfmetrics
-        from reportlab.pdfbase import ttfonts
-        from reportlab.lib.fonts import addMapping
         from reportlab.lib.enums import TA_JUSTIFY, TA_RIGHT
 
-        # register a font that supports most Unicode characters
-        if 1:
-            fontDir = 'ttf-dejavu'
-            font_name = 'DejaVuSans'
-            font_info = [(font_name, 0, 0, font_name),
-                         (font_name, 1, 0, font_name + '-Bold'),
-                         (font_name, 0, 1, font_name + '-Oblique'),
-                         (font_name, 1, 1, font_name + '-BoldOblique'),
-                         ]
-            for font in font_info:
-                fontName = font[3]
-                try:
-                    pdfmetrics.registerFont(ttfonts.TTFont(fontName,os.path.join('/usr/share/fonts/truetype/', fontDir, fontName + '.ttf')))
-                except ttfonts.TTFError:
-                    pdfmetrics.registerFont(ttfonts.TTFont(fontName,os.path.join(fontDir, fontName + '.ttf')))
-                addMapping(*font)
-        else:
-            font_dir = '/usr/share/fonts/truetype/freefont/'
-            font_name = 'FreeSerif'
-            font_info = [(font_name, 0, 0, font_name),
-                         (font_name, 1, 0, font_name + 'Bold'),
-                         (font_name, 0, 1, font_name + 'Italic'),
-                         (font_name, 1, 1, font_name + 'BoldItalic'),
-                         ]
-            for font in font_info:
-                pdfmetrics.registerFont(ttfonts.TTFont(font[3], os.path.join(font_dir, '%s.ttf' % font[3])))
-                addMapping(*font)
-        # done registering fonts
-
+        font_name = getAFont()
 
         doc = SimpleDocTemplate(outputfile('test_rtl_bullets.pdf'),showBoundary=True)
         p_style = ParagraphStyle('default')
