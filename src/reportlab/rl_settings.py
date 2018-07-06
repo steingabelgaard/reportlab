@@ -60,7 +60,8 @@ strikeWidth
 strikeOffset
 strikeGap
 hyphenationLang
-uriWasteReduce'''.split())
+uriWasteReduce
+embeddedHyphenation'''.split())
 
 allowTableBoundsErrors =    1 # set to 0 to die on too large elements in tables in debug (recommend 1 for production use)
 shapeChecking =             1
@@ -142,6 +143,7 @@ hyphenationLang=''                                  #if pyphen installed set thi
 
 uriWasteReduce=0.3                                  #split URI if we would waste 0.3 of a line or if the URI#
                                                     #would not fit on the next line
+embeddedHyphenation=1                               #if true attempt hypenation of words with embededd hyphens
 
 # places to look for T1Font information
 T1SearchPath =  (

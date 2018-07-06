@@ -22,7 +22,7 @@ from reportlab.platypus.doctemplate import PageTemplate, BaseDocTemplate, PageBr
 from reportlab.platypus import tableofcontents
 from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.platypus.tables import TableStyle, Table
-from reportlab.platypus.paragraph import Paragraph, _getFragWords, _splitWord, _fragWordSplitRep, ABag
+from reportlab.platypus.paragraph import Paragraph, _getFragWords, _splitWord, _fragWordSplitRep, ABag, pyphen
 from reportlab.rl_config import rtlSupport
 
 def myMainPageFrame(canvas, doc):
@@ -603,21 +603,34 @@ class FragmentTestCase(unittest.TestCase):
         self.assertEqual(len(m.group(0)),len(sfx),'sfx pattern should match %d characters not %d' %(len(sfx),len(m.group(0))))
 
     def test5(self):
-        from reportlab.platypus.paragraph import _hyphenateWord, stringWidth
-        w ='https://www.reportlab.com/pypi/packages'
+        from reportlab.platypus.paragraph import _hyphenateWord, _hyphenateFragWord, _rebuildFragWord, stringWidth, ABag
+        w = 'https://www.reportlab.com/pypi/packages'
         fontName = 'Helvetica'
         fontSize = 12
-        ww = stringWidth(w,fontName,fontSize)
-        self.assertEqual(_hyphenateWord(None,fontName,fontSize,w,ww,ww+10,ww+5, 0.3),[u'https://www.reportlab.com/pypi/', u'packages'])
-        w ='https://www.repor-tlab.com/pypi/packages'
-        ww = stringWidth(w,fontName,fontSize)
-        self.assertEqual(_hyphenateWord(None,fontName,fontSize,w,ww,ww+10,ww+5, 0.3),[u'https://www.repor-tlab.com/pypi/', u'packages'])
-        w ='https//www.repor-tlab.com/pypi/packages'
-        ww = stringWidth(w,fontName,fontSize)
-        self.assertEqual(_hyphenateWord(None,fontName,fontSize,w,ww,ww+10,ww+5, 0.3),None) #contains - and non letters
-        w ='httpsSSwwwDrepor-tlabDcomSpypiSpackages'    #should succeed because '-' with no non-letters
-        ww = stringWidth(w,fontName,fontSize)
-        self.assertEqual(_hyphenateWord(None,fontName,fontSize,w,ww,ww+10,ww+5, 0.3),[u'httpsSSwwwDrepor-', u'tlabDcomSpypiSpackages'])
+        AF = ABag(rise=0,fontName=fontName,fontSize=fontSize)
+        BF = AF.clone(fontName='Helvetica-Bold')
+
+        def applyTest(w, uriWasteReduce, embeddedHyphenation, ex, split=None):
+            if not split:
+                ww = stringWidth(w,fontName,fontSize)
+                r = _hyphenateWord(None,fontName,fontSize,w,ww,ww+10,ww+5, uriWasteReduce, embeddedHyphenation)
+            elif split:
+                i = int(len(w)*split)
+                fw = _rebuildFragWord([(AF,w[:i]),(BF,w[i:])])
+                #print('%s %s %r %r' % (split,fw[0],fw[1][1],fw[2][1]))
+                ww = fw[0]
+                r = _hyphenateFragWord(None,fw,ww+10,ww+5, uriWasteReduce, embeddedHyphenation)
+                if r is not None:
+                    _r = r
+                    r = [u''.join((_[1] for _ in _fw[1:])) for _fw in _r]  
+            self.assertEqual(r,ex,'hyphenation of w=%r u=%r e=%r ex=%r split=%r failed'%(w,uriWasteReduce,embeddedHyphenation,ex,split))
+        for split in (None,0.001,0.1,0.5,0.8,0.9,1.0):
+            applyTest('https://www.reportlab.com/pypi/packages', 0.3, True, [u'https://www.reportlab.com/pypi/', u'packages'],split=split)
+            applyTest('https://www.reportlab.com/pypi/packages', False, True, None,split=split)
+            applyTest('https://www.repor-tlab.com/pypi/packages', 0.3, True, [u'https://www.repor-tlab.com/pypi/', u'packages'],split=split)
+            applyTest('https//www.repor-tlab.com/pypi/packages', 0.3, True, None,split=split) #not a uri (no :) and contains - and non letters
+            applyTest('httpsSSwwwDrepor-tlabDcomSpypiSpackages', 0.3, True, [u'httpsSSwwwDrepor-', u'tlabDcomSpypiSpackages'],split=split) #should succeed because '-' with no non-letters
+            applyTest('httpsSSwwwDrepor-tlabDcomSpypiSpackages', 0.3, False, None, split=split) #fails because embeddedHyphenation=False
 
 class ULTestCase(unittest.TestCase):
     "Test underlining and overstriking of paragraphs."

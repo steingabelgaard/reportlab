@@ -252,6 +252,8 @@ _paraAttrMap = {'font': ('fontName', None),
                 'strikegap':('strikeGap',_CheckUS('para','strikeGap')),
                 'spaceshrinkage':('spaceShrinkage',_num),
                 'hyphenationLanguage': ('hyphenationLang',None),
+                'uriWasteReduce': ('uriWasteReduce',_num),
+                'embeddedHyphenation': ('embeddedHyphenation',_bool),
                 }
 
 _bulletAttrMap = {
