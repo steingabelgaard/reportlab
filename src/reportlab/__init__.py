@@ -1,5 +1,24 @@
 #Copyright ReportLab Europe Ltd. 2000-2018
 #see license.txt for license details
+import sys
+print("""This is a dead version of reportlab because Bitbucket will cease supporting mercurial
+
+Please download from 
+    
+    https://hg.reportlab.com/hg-public/reportlab
+
+and use the users mailing list by subscribing to the mailman list at
+
+    https://pairlist2.pair.net/mailman/listinfo/reportlab-users
+
+for those who prefer git we maintain a mirror at
+
+    https://github.com/MrBitBucket/reportlab-mirror
+
+Any pull requests / issues etc etc will be ignored unless a good case is made in the users
+mailing list.
+""")
+sys.exit(1)
 __doc__="""The Reportlab PDF generation library."""
 Version = "3.5.26"
 __version__=Version
