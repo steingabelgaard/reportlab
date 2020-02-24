@@ -865,7 +865,13 @@ class ImageReader(object):
                     im = self._image
                     mode = self.mode = im.mode
                     if mode=='RGBA':
-                        if Image.VERSION.startswith('1.1.7'): im.load()
+                        # Pillow 6.0.0 and above have removed the 'VERSION' attribute
+                        # https://bitbucket.org/rptlab/reportlab/issues/176/incompatibility-with-pillow-600
+                        try:
+                            im_ver = Image.__version__
+                        except AttributeError:
+                            im_ver = Image.VERSION
+                        if im_ver.startswith('1.1.7'): im.load()
                         self._dataA = ImageReader(im.split()[3])
                         im = im.convert('RGB')
                         self.mode = 'RGB'
